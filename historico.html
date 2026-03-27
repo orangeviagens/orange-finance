@@ -11,25 +11,25 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg-deep: #0A0A0F;
-            --bg-card: #12121A;
-            --bg-elevated: #1A1A25;
-            --bg-glass: rgba(255,255,255,0.03);
-            --border: rgba(255,255,255,0.06);
-            --border-hover: rgba(255,255,255,0.12);
+            --bg-deep: #FFFFFF;
+            --bg-card: #F8F8FA;
+            --bg-elevated: #F0F0F3;
+            --bg-glass: rgba(0,0,0,0.02);
+            --border: #E5E5EA;
+            --border-hover: #D0D0D8;
             --orange-primary: #E8863A;
             --orange-light: #F2A65A;
             --orange-glow: rgba(232,134,58,0.12);
             --orange-subtle: rgba(232,134,58,0.06);
-            --gold: #C9A96E;
-            --gold-light: #D4B87A;
-            --text-primary: #F5F0E8;
-            --text-secondary: #8A8880;
-            --text-muted: #5A5850;
-            --blue: #5B8DEF;
-            --purple: #9B7AEF;
-            --rose: #E87A9F;
-            --emerald: #5BC4A0;
+            --gold: #B8942E;
+            --gold-light: #C9A53A;
+            --text-primary: #1A1A2E;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --blue: #3B6FD4;
+            --purple: #7B5BC9;
+            --rose: #D05A7F;
+            --emerald: #2A9D6E;
         }
 
         body {
@@ -242,7 +242,7 @@
         thead th:first-child { text-align: left; }
 
         tbody tr {
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
             transition: background-color 0.2s;
         }
 
@@ -471,13 +471,13 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: {
-                            labels: { color: '#8A8880', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
+                            labels: { color: '#6B7280', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
                         },
                         tooltip: {
-                            backgroundColor: '#1A1A25',
-                            titleColor: '#F5F0E8',
-                            bodyColor: '#F5F0E8',
-                            borderColor: 'rgba(255,255,255,0.1)',
+                            backgroundColor: '#FFFFFF',
+                            titleColor: '#1A1A2E',
+                            bodyColor: '#1A1A2E',
+                            borderColor: 'rgba(0,0,0,0.1)',
                             borderWidth: 1,
                             callbacks: {
                                 label: function(ctx) {
@@ -488,13 +488,13 @@
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            ticks: { color: '#5A5850', font: { size: 10 }, maxRotation: 45 }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { color: '#6B7280', font: { size: 10 }, maxRotation: 45 }
                         },
                         y: {
-                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(0,0,0,0.06)' },
                             ticks: {
-                                color: '#5A5850',
+                                color: '#6B7280',
                                 font: { family: 'JetBrains Mono', size: 10 },
                                 callback: v => 'R$ ' + formatShort(v)
                             }
@@ -516,8 +516,8 @@
                         {
                             label: 'Bancos Brasil',
                             data: data.map(d => d.total_brasil),
-                            borderColor: '#5B8DEF',
-                            backgroundColor: 'rgba(91, 141, 239, 0.05)',
+                            borderColor: '#3B6FD4',
+                            backgroundColor: 'rgba(59, 111, 212, 0.08)',
                             fill: true,
                             tension: 0.3,
                             borderWidth: 2,
@@ -526,8 +526,8 @@
                         {
                             label: 'Adquirentes',
                             data: data.map(d => d.total_adquirentes),
-                            borderColor: '#9B7AEF',
-                            backgroundColor: 'rgba(155, 122, 239, 0.05)',
+                            borderColor: '#7B5BC9',
+                            backgroundColor: 'rgba(123, 91, 201, 0.08)',
                             fill: true,
                             tension: 0.3,
                             borderWidth: 2,
@@ -536,8 +536,8 @@
                         {
                             label: 'Bancos USA',
                             data: data.map(d => d.total_usa),
-                            borderColor: '#E87A9F',
-                            backgroundColor: 'rgba(232, 122, 159, 0.05)',
+                            borderColor: '#D05A7F',
+                            backgroundColor: 'rgba(208, 90, 127, 0.08)',
                             fill: true,
                             tension: 0.3,
                             borderWidth: 2,
@@ -551,13 +551,13 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: {
-                            labels: { color: '#8A8880', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
+                            labels: { color: '#6B7280', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
                         },
                         tooltip: {
-                            backgroundColor: '#1A1A25',
-                            titleColor: '#F5F0E8',
-                            bodyColor: '#F5F0E8',
-                            borderColor: 'rgba(255,255,255,0.1)',
+                            backgroundColor: '#FFFFFF',
+                            titleColor: '#1A1A2E',
+                            bodyColor: '#1A1A2E',
+                            borderColor: 'rgba(0,0,0,0.1)',
                             borderWidth: 1,
                             callbacks: {
                                 label: function(ctx) {
@@ -568,13 +568,13 @@
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            ticks: { color: '#5A5850', font: { size: 10 }, maxRotation: 45 }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { color: '#6B7280', font: { size: 10 }, maxRotation: 45 }
                         },
                         y: {
-                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(0,0,0,0.06)' },
                             ticks: {
-                                color: '#5A5850',
+                                color: '#6B7280',
                                 font: { family: 'JetBrains Mono', size: 10 },
                                 callback: v => 'R$ ' + formatShort(v)
                             }

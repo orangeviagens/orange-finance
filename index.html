@@ -14,30 +14,30 @@
         }
 
         :root {
-            --bg-deep: #0A0A0F;
-            --bg-card: #12121A;
-            --bg-elevated: #1A1A25;
-            --bg-glass: rgba(255,255,255,0.03);
-            --border: rgba(255,255,255,0.06);
-            --border-hover: rgba(255,255,255,0.12);
+            --bg-deep: #FFFFFF;
+            --bg-card: #F8F8FA;
+            --bg-elevated: #F0F0F3;
+            --bg-glass: rgba(0,0,0,0.02);
+            --border: #E5E5EA;
+            --border-hover: #D0D0D8;
 
             --orange-primary: #E8863A;
             --orange-light: #F2A65A;
             --orange-glow: rgba(232,134,58,0.12);
             --orange-subtle: rgba(232,134,58,0.06);
 
-            --gold: #C9A96E;
-            --gold-light: #D4B87A;
+            --gold: #B8942E;
+            --gold-light: #C9A53A;
 
-            --blue: #5B8DEF;
-            --purple: #9B7AEF;
-            --rose: #E87A9F;
-            --emerald: #5BC4A0;
-            --amber: #D4A853;
+            --blue: #3B6FD4;
+            --purple: #7B5BC9;
+            --rose: #D05A7F;
+            --emerald: #2A9D6E;
+            --amber: #C49020;
 
-            --text-primary: #E8E6E1;
-            --text-secondary: #8A8880;
-            --text-muted: #5A5850;
+            --text-primary: #1A1A2E;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
         }
 
         html, body {
@@ -51,12 +51,7 @@
 
         body::after {
             content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            display: none;
             pointer-events: none;
             z-index: 9999;
         }
@@ -231,7 +226,7 @@
         .section:nth-child(3) { animation-delay: 0.3s; }
 
         .hero-section {
-            background: radial-gradient(circle at 50% 50%, var(--orange-subtle), transparent);
+            background: linear-gradient(180deg, rgba(232,134,58,0.04), var(--bg-card));
             padding: 48px;
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -354,7 +349,7 @@
 
         .card:hover {
             border-color: var(--border-hover);
-            box-shadow: 0 8px 32px rgba(232, 134, 58, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
         }
 
         .card-title {
@@ -387,7 +382,7 @@
         tbody tr {
             opacity: 0;
             animation: fadeUp 0.3s ease forwards;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
             transition: background-color 0.2s;
         }
 
@@ -424,27 +419,27 @@
 
         tr.category-brasil td:first-child {
             border-left-color: var(--blue);
-            background: rgba(91, 141, 239, 0.03);
+            background: rgba(59, 111, 212, 0.06);
         }
 
         tr.category-adquirente td:first-child {
             border-left-color: var(--purple);
-            background: rgba(155, 122, 239, 0.03);
+            background: rgba(123, 91, 201, 0.06);
         }
 
         tr.category-usa td:first-child {
             border-left-color: var(--rose);
-            background: rgba(232, 122, 159, 0.03);
+            background: rgba(208, 90, 127, 0.06);
         }
 
         tr.category-credito td:first-child {
             border-left-color: var(--emerald);
-            background: rgba(91, 196, 160, 0.03);
+            background: rgba(42, 157, 110, 0.06);
         }
 
         tr.subtotal {
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.02) !important;
+            background: var(--bg-elevated) !important;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
@@ -524,7 +519,7 @@
         }
 
         .mini-table tbody tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border);
         }
 
         .mini-table .value-brl {
@@ -604,7 +599,7 @@
         }
 
         .editing-input {
-            background: var(--bg-elevated);
+            background: #FFFFFF;
             border: 2px solid var(--orange-primary);
             border-radius: 4px;
             color: var(--text-primary);
@@ -614,7 +609,7 @@
             width: 100%;
             text-align: right;
             outline: none;
-            box-shadow: 0 0 16px rgba(232, 134, 58, 0.2);
+            box-shadow: 0 4px 12px rgba(232, 134, 58, 0.15);
         }
 
         .editing-input:focus {
@@ -1214,14 +1209,14 @@
             banks.forEach(bank => { if (categories[bank.category] !== undefined) categories[bank.category] += bank.balance_brl; });
             const labels = ['Bancos Brasil', 'Adquirentes', 'Bancos USA'];
             const data = [categories.brasil, categories.adquirente, categories.usa];
-            const colors = ['#5B8DEF', '#9B7AEF', '#E87A9F'];
+            const colors = ['#3B6FD4', '#7B5BC9', '#D05A7F'];
             const distCtx = document.getElementById('distributionChart').getContext('2d');
             if (distributionChart) distributionChart.destroy();
-            distributionChart = new Chart(distCtx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#12121A', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            distributionChart = new Chart(distCtx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#FFFFFF', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
             const topBanks = [...banks].sort((a, b) => b.balance_brl - a.balance_brl).slice(0, 8);
             const topCtx = document.getElementById('topAccountsChart').getContext('2d');
             if (topAccountsChart) topAccountsChart.destroy();
-            topAccountsChart = new Chart(topCtx, { type: 'bar', data: { labels: topBanks.map(b => b.name), datasets: [{ label: 'Saldo', data: topBanks.map(b => b.balance_brl), backgroundColor: topBanks.map(b => b.category === 'brasil' ? '#5B8DEF' : b.category === 'adquirente' ? '#9B7AEF' : '#E87A9F'), borderColor: '#12121A', borderWidth: 1 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8A8880' } }, y: { grid: { display: false }, ticks: { color: '#8A8880' } } } } });
+            topAccountsChart = new Chart(topCtx, { type: 'bar', data: { labels: topBanks.map(b => b.name), datasets: [{ label: 'Saldo', data: topBanks.map(b => b.balance_brl), backgroundColor: topBanks.map(b => b.category === 'brasil' ? '#3B6FD4' : b.category === 'adquirente' ? '#7B5BC9' : '#D05A7F'), borderColor: '#F8F8FA', borderWidth: 1 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(0, 0, 0, 0.06)' }, ticks: { color: '#6B7280' } }, y: { grid: { display: false }, ticks: { color: '#6B7280' } } } } });
         }
 
         let _exchangeRates = [];
