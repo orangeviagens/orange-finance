@@ -719,18 +719,25 @@
 
         async function fetchData() {
             try {
-                const [banksRes, creditsRes, specialRes, receivablesRes] = await Promise.all([
+                const [banksRes, creditsRes, specialRes, receivablesRes, ratesRes] = await Promise.all([
                     fetch(`${SUPABASE_URL}/rest/v1/bank_accounts`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }),
                     fetch(`${SUPABASE_URL}/rest/v1/credit_limits`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }),
                     fetch(`${SUPABASE_URL}/rest/v1/special_credits`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }),
-                    fetch(`${SUPABASE_URL}/rest/v1/receivables`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } })
+                    fetch(`${SUPABASE_URL}/rest/v1/receivables`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }),
+                    fetch(`${SUPABASE_URL}/rest/v1/exchange_rates`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } })
                 ]);
                 if (!banksRes.ok) throw new Error('API Error');
+                const banksData = (await banksRes.json()) || FALLBACK_DATA.banks;
+                // Normalize Supabase categories to local names
+                const categoryMap = { banco_brasil: 'brasil', adquirente: 'adquirente', banco_usa: 'usa' };
+                banksData.forEach(b => { if (categoryMap[b.category]) b.category = categoryMap[b.category]; });
+                const ratesData = ratesRes.ok ? await ratesRes.json() : [];
                 return {
-                    banks: (await banksRes.json()) || FALLBACK_DATA.banks,
+                    banks: banksData,
                     credits: (await creditsRes.json()) || FALLBACK_DATA.credits,
                     special_credits: (await specialRes.json()) || FALLBACK_DATA.special_credits,
-                    receivables: (await receivablesRes.json()) || FALLBACK_DATA.receivables
+                    receivables: (await receivablesRes.json()) || FALLBACK_DATA.receivables,
+                    exchange_rates: ratesData
                 };
             } catch (e) {
                 console.warn('Using fallback data:', e);
@@ -775,7 +782,7 @@
                 total += credit.credit_limit;
                 const row = document.createElement('tr');
                 row.className = 'category-credito';
-                row.innerHTML = `<td class="bank-name">${credit.institution} / ${credit.description}</td><td class="value-brl">${formatCurrency(credit.credit_limit)}</td>`;
+                row.innerHTML = `<td class="bank-name">${credit.bank_name} / ${credit.credit_type}</td><td class="value-brl">${formatCurrency(credit.credit_limit)}</td>`;
                 tbody.appendChild(row);
             });
             const totalRow = document.createElement('tr');
@@ -793,7 +800,8 @@
                 if (rec.amount > 0) {
                     total += rec.amount;
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${rec.source}</td><td>${new Date(rec.receive_date).toLocaleDateString('pt-BR')}</td><td class="value-brl">${formatCurrency(rec.amount)}</td>`;
+                    const dateStr = rec.receive_date ? rec.receive_date.split('T')[0].split('-').reverse().join('/') : '';
+                    row.innerHTML = `<td>${rec.source}</td><td>${dateStr}</td><td class="value-brl">${formatCurrency(rec.amount)}</td>`;
                     tbody.appendChild(row);
                 }
             });
@@ -805,9 +813,9 @@
             tbody.innerHTML = '';
             let total = 0;
             credits.forEach(card => {
-                total += card.limit;
+                total += card.available_limit || 0;
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${card.name}</td><td class="value-brl">${formatCurrency(card.limit)}</td>`;
+                row.innerHTML = `<td>${card.bank_name}</td><td class="value-brl">${formatCurrency(card.available_limit)}</td>`;
                 tbody.appendChild(row);
             });
             document.getElementById('cardsTotal').textContent = formatCurrency(total);
@@ -846,11 +854,17 @@
             topAccountsChart = new Chart(topCtx, { type: 'bar', data: { labels: topBanks.map(b => b.name), datasets: [{ label: 'Saldo', data: topBanks.map(b => b.balance_brl), backgroundColor: topBanks.map(b => b.category === 'brasil' ? '#5B8DEF' : b.category === 'adquirente' ? '#9B7AEF' : '#E87A9F'), borderColor: '#12121A', borderWidth: 1 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8A8880' } }, y: { grid: { display: false }, ticks: { color: '#8A8880' } } } } });
         }
 
-        function renderExchangeRates() {
+        let _exchangeRates = [];
+        function renderExchangeRates(rates) {
+            if (rates && rates.length) _exchangeRates = rates;
             const container = document.getElementById('exchangeRates');
             container.innerHTML = '';
-            const rates = { USD: 5.2390, EUR: 6.0496 };
-            Object.entries(rates).forEach(([code, rate]) => {
+            const rateMap = {};
+            if (_exchangeRates.length) {
+                _exchangeRates.forEach(r => { rateMap[r.currency] = r.rate; });
+            }
+            const displayRates = { USD: rateMap.USD || 5.2390, EUR: rateMap.EUR || 6.0496 };
+            Object.entries(displayRates).forEach(([code, rate]) => {
                 const pill = document.createElement('div');
                 pill.className = 'exchange-pill';
                 const flag = code === 'USD' ? '🇺🇸' : '🇪🇺';
@@ -871,12 +885,12 @@
             const totalBanks = renderBanksTable(data.banks);
             const totalCredits = renderCreditsTable(data.special_credits);
             const totalCards = renderCards(data.credits);
-            document.getElementById('heroSubtitle').textContent = `disponível em ${data.banks.length} contas`;
-            document.getElementById('heroValue').textContent = formatCurrency(totalBanks + totalCredits);
+            document.getElementById('heroSubtitle').textContent = `disponível em ${data.banks.length} contas · Projetado: ${formatCurrency(totalBanks + totalCredits)}`;
+            document.getElementById('heroValue').textContent = formatCurrency(totalBanks);
             renderHeroMetrics(data.banks, totalBanks, totalCards);
             renderCharts(data.banks);
             renderReceivables(data.receivables);
-            renderExchangeRates();
+            renderExchangeRates(data.exchange_rates);
             updateHeader();
             updateFooter();
             document.getElementById('refreshBtn').classList.remove('spinning');
