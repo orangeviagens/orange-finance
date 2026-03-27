@@ -504,6 +504,75 @@
             color: var(--emerald);
         }
 
+        /* Inline editing styles */
+        .editable {
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .editable:hover {
+            background: rgba(232, 134, 58, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(232, 134, 58, 0.25);
+        }
+
+        .editable:hover::after {
+            content: '✏️';
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .editing-input {
+            background: var(--bg-elevated);
+            border: 2px solid var(--orange-primary);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            padding: 6px 10px;
+            width: 100%;
+            text-align: right;
+            outline: none;
+            box-shadow: 0 0 16px rgba(232, 134, 58, 0.2);
+        }
+
+        .editing-input:focus {
+            border-color: var(--gold);
+        }
+
+        .save-toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--emerald);
+            color: #0A0A0F;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .save-toast.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .save-toast.error {
+            background: #E85A5A;
+            color: white;
+        }
+
         footer {
             text-align: center;
             padding: 32px;
@@ -592,6 +661,7 @@
         <div class="header-divider"></div>
     </header>
 
+    <div class="save-toast" id="saveToast">Salvo com sucesso!</div>
     <main>
         <section class="section hero-section">
             <div class="hero-label">Posição Financeira</div>
@@ -745,6 +815,71 @@
             }
         }
 
+        // ========== INLINE EDITING ==========
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('saveToast');
+            toast.textContent = message;
+            toast.classList.toggle('error', isError);
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 2500);
+        }
+
+        async function patchSupabase(table, id, field, value) {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ [field]: value })
+            });
+            if (!res.ok) throw new Error(`Erro ao salvar: ${res.status}`);
+        }
+
+        function makeEditable(td, { table, id, field, type = 'number', onSave }) {
+            td.classList.add('editable');
+            td.addEventListener('click', function handler() {
+                if (td.querySelector('.editing-input')) return;
+                const originalText = td.textContent;
+                let currentValue;
+                if (type === 'number') {
+                    currentValue = parseFloat(originalText.replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+                } else {
+                    currentValue = originalText.trim();
+                }
+                const input = document.createElement('input');
+                input.className = 'editing-input';
+                input.type = type === 'number' ? 'number' : 'text';
+                input.step = type === 'number' ? '0.01' : undefined;
+                input.value = type === 'number' ? currentValue : currentValue;
+                td.textContent = '';
+                td.appendChild(input);
+                input.focus();
+                input.select();
+
+                async function save() {
+                    const newValue = type === 'number' ? parseFloat(input.value) || 0 : input.value.trim();
+                    td.textContent = type === 'number' ? formatCurrency(newValue) : newValue;
+                    try {
+                        await patchSupabase(table, id, field, newValue);
+                        showToast('Salvo com sucesso!');
+                        if (onSave) onSave();
+                        setTimeout(render, 500);
+                    } catch (e) {
+                        showToast('Erro ao salvar!', true);
+                        td.textContent = originalText;
+                    }
+                }
+
+                function cancel() {
+                    td.textContent = originalText;
+                }
+
+                input.addEventListener('blur', save);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                    if (e.key === 'Escape') { input.removeEventListener('blur', save); cancel(); }
+                });
+            });
+        }
+
         function renderBanksTable(banks) {
             const tbody = document.getElementById('banksTbody');
             tbody.innerHTML = '';
@@ -758,7 +893,20 @@
                     categoryTotal += bank.balance_brl;
                     const row = document.createElement('tr');
                     row.className = `category-${['brasil', 'adquirente', 'usa'].includes(cat.label === 'Bancos Brasil' ? 'brasil' : cat.label === 'Adquirentes' ? 'adquirente' : 'usa') ? (cat.label === 'Bancos Brasil' ? 'brasil' : cat.label === 'Adquirentes' ? 'adquirente' : 'usa') : ''}`;
-                    row.innerHTML = `<td class="bank-name">${bank.name}</td><td class="value-brl">${formatCurrency(bank.balance_brl)}</td><td class="value-usd">${bank.balance_usd > 0 ? formatCurrency(bank.balance_usd) : ''}</td>`;
+                    const tdName = document.createElement('td');
+                    tdName.className = 'bank-name';
+                    tdName.textContent = bank.name;
+                    const tdBrl = document.createElement('td');
+                    tdBrl.className = 'value-brl';
+                    tdBrl.textContent = formatCurrency(bank.balance_brl);
+                    makeEditable(tdBrl, { table: 'bank_accounts', id: bank.id, field: 'balance_brl' });
+                    const tdUsd = document.createElement('td');
+                    tdUsd.className = 'value-usd';
+                    tdUsd.textContent = bank.balance_usd > 0 ? formatCurrency(bank.balance_usd) : '';
+                    if (bank.balance_usd > 0) makeEditable(tdUsd, { table: 'bank_accounts', id: bank.id, field: 'balance_usd' });
+                    row.appendChild(tdName);
+                    row.appendChild(tdBrl);
+                    row.appendChild(tdUsd);
                     tbody.appendChild(row);
                 });
                 const subtotalRow = document.createElement('tr');
@@ -782,7 +930,15 @@
                 total += credit.credit_limit;
                 const row = document.createElement('tr');
                 row.className = 'category-credito';
-                row.innerHTML = `<td class="bank-name">${credit.bank_name} / ${credit.credit_type}</td><td class="value-brl">${formatCurrency(credit.credit_limit)}</td>`;
+                const tdName = document.createElement('td');
+                tdName.className = 'bank-name';
+                tdName.textContent = `${credit.bank_name} / ${credit.credit_type}`;
+                const tdVal = document.createElement('td');
+                tdVal.className = 'value-brl';
+                tdVal.textContent = formatCurrency(credit.credit_limit);
+                makeEditable(tdVal, { table: 'special_credits', id: credit.id, field: 'credit_limit' });
+                row.appendChild(tdName);
+                row.appendChild(tdVal);
                 tbody.appendChild(row);
             });
             const totalRow = document.createElement('tr');
@@ -801,7 +957,17 @@
                     total += rec.amount;
                     const row = document.createElement('tr');
                     const dateStr = rec.receive_date ? rec.receive_date.split('T')[0].split('-').reverse().join('/') : '';
-                    row.innerHTML = `<td>${rec.source}</td><td>${dateStr}</td><td class="value-brl">${formatCurrency(rec.amount)}</td>`;
+                    const tdSource = document.createElement('td');
+                    tdSource.textContent = rec.source;
+                    const tdDate = document.createElement('td');
+                    tdDate.textContent = dateStr;
+                    const tdAmount = document.createElement('td');
+                    tdAmount.className = 'value-brl';
+                    tdAmount.textContent = formatCurrency(rec.amount);
+                    makeEditable(tdAmount, { table: 'receivables', id: rec.id, field: 'amount' });
+                    row.appendChild(tdSource);
+                    row.appendChild(tdDate);
+                    row.appendChild(tdAmount);
                     tbody.appendChild(row);
                 }
             });
@@ -815,7 +981,14 @@
             credits.forEach(card => {
                 total += card.available_limit || 0;
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${card.bank_name}</td><td class="value-brl">${formatCurrency(card.available_limit)}</td>`;
+                const tdName = document.createElement('td');
+                tdName.textContent = card.bank_name;
+                const tdVal = document.createElement('td');
+                tdVal.className = 'value-brl';
+                tdVal.textContent = formatCurrency(card.available_limit);
+                makeEditable(tdVal, { table: 'credit_limits', id: card.id, field: 'available_limit' });
+                row.appendChild(tdName);
+                row.appendChild(tdVal);
                 tbody.appendChild(row);
             });
             document.getElementById('cardsTotal').textContent = formatCurrency(total);
@@ -863,12 +1036,63 @@
             if (_exchangeRates.length) {
                 _exchangeRates.forEach(r => { rateMap[r.currency] = r.rate; });
             }
-            const displayRates = { USD: rateMap.USD || 5.2390, EUR: rateMap.EUR || 6.0496 };
-            Object.entries(displayRates).forEach(([code, rate]) => {
+            const idMap = {};
+            if (_exchangeRates.length) {
+                _exchangeRates.forEach(r => { idMap[r.currency] = r.id; });
+            }
+            const displayRates = {
+                USD: idMap.USD ? { rate: rateMap.USD || 5.2390, id: idMap.USD } : (rateMap.USD || 5.2390),
+                EUR: idMap.EUR ? { rate: rateMap.EUR || 6.0496, id: idMap.EUR } : (rateMap.EUR || 6.0496)
+            };
+            Object.entries(displayRates).forEach(([code, rateInfo]) => {
+                const rate = typeof rateInfo === 'object' ? rateInfo.rate : rateInfo;
+                const rateId = typeof rateInfo === 'object' ? rateInfo.id : null;
                 const pill = document.createElement('div');
                 pill.className = 'exchange-pill';
                 const flag = code === 'USD' ? '🇺🇸' : '🇪🇺';
-                pill.innerHTML = `<span class="exchange-flag">${flag}</span> ${code}: ${rate.toFixed(4)}`;
+                const flagSpan = document.createElement('span');
+                flagSpan.className = 'exchange-flag';
+                flagSpan.textContent = flag;
+                const rateSpan = document.createElement('span');
+                rateSpan.textContent = ` ${code}: ${rate.toFixed(4)}`;
+                if (rateId) {
+                    rateSpan.classList.add('editable');
+                    rateSpan.style.cursor = 'pointer';
+                    rateSpan.addEventListener('click', () => {
+                        if (rateSpan.querySelector('.editing-input')) return;
+                        const origText = rateSpan.textContent;
+                        const input = document.createElement('input');
+                        input.className = 'editing-input';
+                        input.type = 'number';
+                        input.step = '0.0001';
+                        input.value = rate;
+                        input.style.width = '90px';
+                        input.style.textAlign = 'center';
+                        input.style.fontSize = '11px';
+                        rateSpan.textContent = '';
+                        rateSpan.appendChild(input);
+                        input.focus();
+                        input.select();
+                        async function save() {
+                            const newVal = parseFloat(input.value) || rate;
+                            rateSpan.textContent = ` ${code}: ${newVal.toFixed(4)}`;
+                            try {
+                                await patchSupabase('exchange_rates', rateId, 'rate', newVal);
+                                showToast('Câmbio atualizado!');
+                            } catch (e) {
+                                showToast('Erro ao salvar câmbio!', true);
+                                rateSpan.textContent = origText;
+                            }
+                        }
+                        input.addEventListener('blur', save);
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                            if (e.key === 'Escape') { input.removeEventListener('blur', save); rateSpan.textContent = origText; }
+                        });
+                    });
+                }
+                pill.appendChild(flagSpan);
+                pill.appendChild(rateSpan);
                 container.appendChild(pill);
             });
         }
