@@ -938,6 +938,8 @@
             tbody.innerHTML = '';
             const categories = { brasil: { label: 'Bancos Brasil', banks: [] }, adquirente: { label: 'Adquirentes', banks: [] }, usa: { label: 'Bancos USA', banks: [] } };
             banks.forEach(bank => { if (categories[bank.category]) categories[bank.category].banks.push(bank); });
+            // Ordenar alfabeticamente dentro de cada categoria
+            Object.values(categories).forEach(cat => { cat.banks.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')); });
             let grandTotal = 0;
             Object.values(categories).forEach((cat) => {
                 if (cat.banks.length === 0) return;
