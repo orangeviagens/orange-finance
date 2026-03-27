@@ -465,6 +465,33 @@
             font-family: 'DM Sans', sans-serif;
             font-weight: 500;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bank-logo {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            object-fit: contain;
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+        }
+
+        .bank-logo-fallback {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            color: #fff;
+            flex-shrink: 0;
+            text-transform: uppercase;
         }
 
         .value-brl {
@@ -886,33 +913,83 @@
             if (!res.ok) throw new Error(`Erro ao salvar: ${res.status}`);
         }
 
-        function makeEditable(td, { table, id, field, type = 'number', onSave }) {
+        const formatUSD = (value) => new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2
+        }).format(value);
+
+        function makeEditable(td, { table, id, field, type = 'number', currency = 'BRL', usdValue, onSave }) {
             td.classList.add('editable');
             td.addEventListener('click', function handler() {
                 if (td.querySelector('.editing-input')) return;
                 const originalText = td.textContent;
                 let currentValue;
                 if (type === 'number') {
-                    currentValue = parseFloat(originalText.replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+                    if (currency === 'USD' && usdValue !== undefined) {
+                        currentValue = usdValue;
+                    } else {
+                        currentValue = parseFloat(originalText.replace(/[R$US\s.]/g, '').replace(',', '.')) || 0;
+                    }
                 } else {
                     currentValue = originalText.trim();
                 }
+
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.alignItems = 'center';
+                wrapper.style.gap = '6px';
+
                 const input = document.createElement('input');
                 input.className = 'editing-input';
                 input.type = type === 'number' ? 'number' : 'text';
                 input.step = type === 'number' ? '0.01' : undefined;
                 input.value = type === 'number' ? currentValue : currentValue;
-                td.textContent = '';
-                td.appendChild(input);
+
+                if (currency === 'USD') {
+                    input.style.textAlign = 'right';
+                    const label = document.createElement('span');
+                    label.textContent = 'US$';
+                    label.style.cssText = 'color: var(--gold); font-family: JetBrains Mono, monospace; font-size: 12px; font-weight: 600; white-space: nowrap;';
+                    wrapper.appendChild(label);
+                    const usdRate = _currentUsdRate || 5.239;
+                    const preview = document.createElement('div');
+                    preview.style.cssText = 'font-size: 10px; color: var(--text-muted); font-family: JetBrains Mono, monospace; margin-top: 2px; text-align: right;';
+                    preview.textContent = `≈ ${formatCurrency(currentValue * usdRate)}`;
+
+                    input.addEventListener('input', () => {
+                        const val = parseFloat(input.value) || 0;
+                        preview.textContent = `≈ ${formatCurrency(val * usdRate)}`;
+                    });
+
+                    wrapper.appendChild(input);
+                    td.textContent = '';
+                    td.appendChild(wrapper);
+                    td.appendChild(preview);
+                } else {
+                    td.textContent = '';
+                    td.appendChild(input);
+                }
+
                 input.focus();
                 input.select();
 
                 async function save() {
                     const newValue = type === 'number' ? parseFloat(input.value) || 0 : input.value.trim();
-                    td.textContent = type === 'number' ? formatCurrency(newValue) : newValue;
                     try {
-                        await patchSupabase(table, id, field, newValue);
-                        showToast('Salvo com sucesso!');
+                        if (currency === 'USD') {
+                            const usdRate = _currentUsdRate || 5.239;
+                            const brlValue = newValue * usdRate;
+                            await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                                method: 'PATCH',
+                                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                                body: JSON.stringify({ balance_usd: newValue, balance_brl: brlValue })
+                            });
+                            td.textContent = formatCurrency(brlValue);
+                            showToast(`US$ ${newValue.toFixed(2)} → ${formatCurrency(brlValue)} (câmbio: ${usdRate.toFixed(4)})`);
+                        } else {
+                            td.textContent = type === 'number' ? formatCurrency(newValue) : newValue;
+                            await patchSupabase(table, id, field, newValue);
+                            showToast('Salvo com sucesso!');
+                        }
                         if (onSave) onSave();
                         setTimeout(render, 500);
                     } catch (e) {
@@ -933,6 +1010,62 @@
             });
         }
 
+        // ========== BANK LOGOS ==========
+        const BANK_DOMAINS = {
+            'Itau': 'itau.com.br', 'Santander': 'santander.com.br', 'Sicredi': 'sicredi.com.br',
+            'XP': 'xpi.com.br', 'Daycoval': 'bancobmg.com.br', 'Safra': 'safra.com.br',
+            'C6': 'c6bank.com.br', 'BB': 'bb.com.br', 'BS2': 'bs2.com', 'CAIXA $$': 'caixa.gov.br',
+            'Barte': 'bfrpay.com.br', 'DOM': 'dom.com.br', 'Iugu': 'iugu.com',
+            'MP': 'mercadopago.com.br', 'PagBank': 'pagseguro.com.br', 'Safrapay': 'safrapay.com.br',
+            'Stone': 'stone.com.br', 'Mercury': 'mercury.com', 'Jeeves': 'tryjeeves.com',
+            'Stripe': 'stripe.com', 'BofA': 'bankofamerica.com', 'Cambio Real': 'cambioreal.com',
+            'Regions': 'regions.com',
+            'CONTA SIMPLES': 'contasimples.com', 'CLARA CARTOES': 'clara.com',
+            'BANCO DO BRASIL': 'bb.com.br', 'BANCO SANTANDER': 'santander.com.br',
+            'BANCO C6': 'c6bank.com.br'
+        };
+
+        const BANK_COLORS = {
+            'Itau': '#FF6600', 'Santander': '#EC0000', 'Sicredi': '#00A651', 'XP': '#1E1E1E',
+            'Daycoval': '#003B71', 'Safra': '#00447C', 'C6': '#1A1A1A', 'BB': '#FFEF00',
+            'BS2': '#6B2D8B', 'CAIXA $$': '#005CA9', 'Barte': '#00B4D8', 'DOM': '#2D5BFF',
+            'Iugu': '#7B61FF', 'MP': '#00AEEF', 'PagBank': '#41BF56', 'Safrapay': '#00447C',
+            'Stone': '#00A868', 'Mercury': '#6366F1', 'Jeeves': '#FF5722', 'Stripe': '#635BFF',
+            'BofA': '#012169', 'Cambio Real': '#D4A017', 'Regions': '#007A33',
+            'CONTA SIMPLES': '#00C2B2', 'CLARA CARTOES': '#6B4EFF',
+            'BANCO DO BRASIL': '#FFEF00', 'BANCO SANTANDER': '#EC0000', 'BANCO C6': '#1A1A1A'
+        };
+
+        function createBankLogo(name) {
+            const domain = BANK_DOMAINS[name];
+            const container = document.createElement('span');
+            if (domain) {
+                const img = document.createElement('img');
+                img.className = 'bank-logo';
+                img.src = `https://logo.clearbit.com/${domain}?size=48`;
+                img.alt = name;
+                img.loading = 'lazy';
+                img.onerror = function() {
+                    const fb = createFallbackLogo(name);
+                    this.parentNode.replaceChild(fb, this);
+                };
+                container.appendChild(img);
+            } else {
+                container.appendChild(createFallbackLogo(name));
+            }
+            return container;
+        }
+
+        function createFallbackLogo(name) {
+            const div = document.createElement('div');
+            div.className = 'bank-logo-fallback';
+            const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2);
+            div.textContent = initials;
+            div.style.background = BANK_COLORS[name] || '#5B8DEF';
+            if (['BB', 'BANCO DO BRASIL'].includes(name)) div.style.color = '#003B71';
+            return div;
+        }
+
         function renderBanksTable(banks) {
             const tbody = document.getElementById('banksTbody');
             tbody.innerHTML = '';
@@ -950,15 +1083,21 @@
                     row.className = `category-${['brasil', 'adquirente', 'usa'].includes(cat.label === 'Bancos Brasil' ? 'brasil' : cat.label === 'Adquirentes' ? 'adquirente' : 'usa') ? (cat.label === 'Bancos Brasil' ? 'brasil' : cat.label === 'Adquirentes' ? 'adquirente' : 'usa') : ''}`;
                     const tdName = document.createElement('td');
                     tdName.className = 'bank-name';
-                    tdName.textContent = bank.name;
+                    tdName.appendChild(createBankLogo(bank.name));
+                    tdName.appendChild(document.createTextNode(bank.name));
+                    const isUSA = bank.category === 'usa';
                     const tdBrl = document.createElement('td');
                     tdBrl.className = 'value-brl';
                     tdBrl.textContent = formatCurrency(bank.balance_brl);
-                    makeEditable(tdBrl, { table: 'bank_accounts', id: bank.id, field: 'balance_brl' });
+                    if (isUSA) {
+                        // USA banks: edit in USD, auto-convert to BRL
+                        makeEditable(tdBrl, { table: 'bank_accounts', id: bank.id, field: 'balance_brl', currency: 'USD', usdValue: bank.balance_usd || 0 });
+                    } else {
+                        makeEditable(tdBrl, { table: 'bank_accounts', id: bank.id, field: 'balance_brl' });
+                    }
                     const tdUsd = document.createElement('td');
                     tdUsd.className = 'value-usd';
-                    tdUsd.textContent = bank.balance_usd > 0 ? formatCurrency(bank.balance_usd) : '';
-                    if (bank.balance_usd > 0) makeEditable(tdUsd, { table: 'bank_accounts', id: bank.id, field: 'balance_usd' });
+                    tdUsd.textContent = bank.balance_usd > 0 ? formatUSD(bank.balance_usd) : '';
                     row.appendChild(tdName);
                     row.appendChild(tdBrl);
                     row.appendChild(tdUsd);
@@ -987,7 +1126,8 @@
                 row.className = 'category-credito';
                 const tdName = document.createElement('td');
                 tdName.className = 'bank-name';
-                tdName.textContent = `${credit.bank_name} / ${credit.credit_type}`;
+                tdName.appendChild(createBankLogo(credit.bank_name));
+                tdName.appendChild(document.createTextNode(`${credit.bank_name} / ${credit.credit_type}`));
                 const tdVal = document.createElement('td');
                 tdVal.className = 'value-brl';
                 tdVal.textContent = formatCurrency(credit.credit_limit);
@@ -1037,7 +1177,9 @@
                 total += card.available_limit || 0;
                 const row = document.createElement('tr');
                 const tdName = document.createElement('td');
-                tdName.textContent = card.bank_name;
+                tdName.className = 'bank-name';
+                tdName.appendChild(createBankLogo(card.bank_name));
+                tdName.appendChild(document.createTextNode(card.bank_name));
                 const tdVal = document.createElement('td');
                 tdVal.className = 'value-brl';
                 tdVal.textContent = formatCurrency(card.available_limit);
@@ -1083,8 +1225,13 @@
         }
 
         let _exchangeRates = [];
+        let _currentUsdRate = 5.239;
         function renderExchangeRates(rates) {
-            if (rates && rates.length) _exchangeRates = rates;
+            if (rates && rates.length) {
+                _exchangeRates = rates;
+                const usd = rates.find(r => r.currency === 'USD');
+                if (usd) _currentUsdRate = usd.rate;
+            }
             const container = document.getElementById('exchangeRates');
             container.innerHTML = '';
             const rateMap = {};
