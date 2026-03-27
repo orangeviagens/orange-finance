@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orange Finance – Histórico de Caixa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #0A0A0F;
+            --bg-card: #12121A;
+            --bg-elevated: #1A1A25;
+            --bg-glass: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --orange-primary: #E8863A;
+            --orange-light: #F2A65A;
+            --orange-glow: rgba(232,134,58,0.12);
+            --orange-subtle: rgba(232,134,58,0.06);
+            --gold: #C9A96E;
+            --gold-light: #D4B87A;
+            --text-primary: #F5F0E8;
+            --text-secondary: #8A8880;
+            --text-muted: #5A5850;
+            --blue: #5B8DEF;
+            --purple: #9B7AEF;
+            --rose: #E87A9F;
+            --emerald: #5BC4A0;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 60px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo { font-size: 28px; }
+
+        .header-brand-main {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .header-brand-sub {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--orange-primary);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        .nav-link.active {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.06);
+        }
+
+        main {
+            padding: 40px 32px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 300;
+            margin-bottom: 32px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 20px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.06);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 8px 32px rgba(232, 134, 58, 0.08);
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--orange-primary);
+            background: var(--orange-subtle);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-change {
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .stat-change.up { color: var(--emerald); }
+        .stat-change.down { color: var(--rose); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 16px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+        }
+
+        thead th:first-child { text-align: left; }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-elevated);
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .value-mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 32px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+
+        .empty-state-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-hint { font-size: 13px; }
+
+        footer {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 300;
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate { opacity: 0; animation: fadeUp 0.6s ease forwards; }
+        .animate:nth-child(1) { animation-delay: 0.1s; }
+        .animate:nth-child(2) { animation-delay: 0.2s; }
+        .animate:nth-child(3) { animation-delay: 0.3s; }
+
+        @media (max-width: 768px) {
+            header { padding: 0 16px; flex-wrap: wrap; height: auto; gap: 8px; padding: 12px 16px; }
+            main { padding: 24px 16px; }
+            .chart-container { height: 280px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            td, th { padding: 8px 10px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <div class="header-logo">🍊</div>
+            <div class="header-brand">
+                <div class="header-brand-main">Orange Finance</div>
+                <div class="header-brand-sub">Orange Viagens</div>
+            </div>
+        </div>
+        <div class="header-nav">
+            <a href="index.html" class="nav-link">Dashboard</a>
+            <a href="historico.html" class="nav-link active">Histórico</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="animate">
+            <div class="page-title">Histórico de Posição de Caixa</div>
+            <div class="page-subtitle">Evolução diária do caixa da Orange Viagens</div>
+        </div>
+
+        <div class="filters animate">
+            <button class="filter-btn active" data-days="30">30 dias</button>
+            <button class="filter-btn" data-days="90">90 dias</button>
+            <button class="filter-btn" data-days="180">6 meses</button>
+            <button class="filter-btn" data-days="365">1 ano</button>
+            <button class="filter-btn" data-days="0">Tudo</button>
+        </div>
+
+        <div class="stats-grid animate" id="statsGrid"></div>
+
+        <div class="card animate">
+            <div class="card-title">Evolução do Caixa</div>
+            <div class="chart-container">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card animate">
+            <div class="card-title">Composição por Categoria</div>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card animate">
+            <div class="card-title">Registros Detalhados</div>
+            <div id="tableContainer"></div>
+        </div>
+    </main>
+
+    <footer id="footer">Orange Finance v3.0 · Histórico de Caixa</footer>
+
+    <script>
+        const SUPABASE_URL = 'https://igixjruaogfcjxqvohuw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnaXhqcnVhb2dmY2p4cXZvaHV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzU3NzksImV4cCI6MjA5MDIxMTc3OX0.0nif6IO0VBIAOO5QKCHBkEGTDlxanwJN0f9LrGNns2k';
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+        }
+
+        function formatShort(value) {
+            if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+            if (Math.abs(value) >= 1000) return (value / 1000).toFixed(0) + 'k';
+            return value.toFixed(0);
+        }
+
+        let allData = [];
+        let historyChart = null;
+        let categoryChart = null;
+        let currentDays = 30;
+
+        async function fetchHistory(days) {
+            let url = `${SUPABASE_URL}/rest/v1/cash_position_history?order=snapshot_date.asc`;
+            if (days > 0) {
+                const since = new Date();
+                since.setDate(since.getDate() - days);
+                url += `&snapshot_date=gte.${since.toISOString().split('T')[0]}`;
+            }
+            const res = await fetch(url, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+            return await res.json();
+        }
+
+        function renderStats(data) {
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = '';
+            if (data.length === 0) return;
+
+            const latest = data[data.length - 1];
+            const prev = data.length > 1 ? data[data.length - 2] : null;
+            const first = data[0];
+
+            const stats = [
+                { label: 'Última Posição', value: formatCurrency(latest.total_banks), change: prev ? latest.total_banks - prev.total_banks : null },
+                { label: 'Projetado', value: formatCurrency(latest.total_projected), change: prev ? latest.total_projected - prev.total_projected : null },
+                { label: 'Variação no Período', value: formatCurrency(latest.total_banks - first.total_banks), change: latest.total_banks - first.total_banks },
+                { label: 'Registros', value: data.length + ' dias', change: null },
+                { label: 'Máximo', value: formatCurrency(Math.max(...data.map(d => d.total_banks))), change: null },
+                { label: 'Mínimo', value: formatCurrency(Math.min(...data.map(d => d.total_banks))), change: null }
+            ];
+
+            stats.forEach(stat => {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                let changeHtml = '';
+                if (stat.change !== null) {
+                    const dir = stat.change >= 0 ? 'up' : 'down';
+                    const arrow = stat.change >= 0 ? '▲' : '▼';
+                    changeHtml = `<div class="stat-change ${dir}">${arrow} ${formatCurrency(Math.abs(stat.change))}</div>`;
+                }
+                card.innerHTML = `<div class="stat-label">${stat.label}</div><div class="stat-value">${stat.value}</div>${changeHtml}`;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderHistoryChart(data) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            if (historyChart) historyChart.destroy();
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.snapshot_date),
+                    datasets: [
+                        {
+                            label: 'Total Disponível',
+                            data: data.map(d => d.total_banks),
+                            borderColor: '#E8863A',
+                            backgroundColor: 'rgba(232, 134, 58, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2.5,
+                            pointRadius: data.length > 60 ? 0 : 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#E8863A'
+                        },
+                        {
+                            label: 'Projetado',
+                            data: data.map(d => d.total_projected),
+                            borderColor: '#C9A96E',
+                            backgroundColor: 'rgba(201, 169, 110, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 1.5,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointBackgroundColor: '#C9A96E'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8A8880', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1A1A25',
+                            titleColor: '#F5F0E8',
+                            bodyColor: '#F5F0E8',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#5A5850', font: { size: 10 }, maxRotation: 45 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#5A5850',
+                                font: { family: 'JetBrains Mono', size: 10 },
+                                callback: v => 'R$ ' + formatShort(v)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChart) categoryChart.destroy();
+
+            categoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.snapshot_date),
+                    datasets: [
+                        {
+                            label: 'Bancos Brasil',
+                            data: data.map(d => d.total_brasil),
+                            borderColor: '#5B8DEF',
+                            backgroundColor: 'rgba(91, 141, 239, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: data.length > 60 ? 0 : 3
+                        },
+                        {
+                            label: 'Adquirentes',
+                            data: data.map(d => d.total_adquirentes),
+                            borderColor: '#9B7AEF',
+                            backgroundColor: 'rgba(155, 122, 239, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: data.length > 60 ? 0 : 3
+                        },
+                        {
+                            label: 'Bancos USA',
+                            data: data.map(d => d.total_usa),
+                            borderColor: '#E87A9F',
+                            backgroundColor: 'rgba(232, 122, 159, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: data.length > 60 ? 0 : 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8A8880', font: { family: 'DM Sans', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1A1A25',
+                            titleColor: '#F5F0E8',
+                            bodyColor: '#F5F0E8',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#5A5850', font: { size: 10 }, maxRotation: 45 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#5A5850',
+                                font: { family: 'JetBrains Mono', size: 10 },
+                                callback: v => 'R$ ' + formatShort(v)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('tableContainer');
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <div class="empty-state-text">Nenhum registro ainda</div>
+                        <div class="empty-state-hint">Use o botão "📸 Gravar Posição" no dashboard para começar a registrar.</div>
+                    </div>`;
+                return;
+            }
+
+            const reversed = [...data].reverse();
+            let html = `<table><thead><tr>
+                <th style="text-align:left">Data</th>
+                <th>Disponível</th>
+                <th>Brasil</th>
+                <th>Adquirentes</th>
+                <th>USA</th>
+                <th>Créd. Especiais</th>
+                <th>Cartões</th>
+                <th>Recebíveis</th>
+                <th>Projetado</th>
+            </tr></thead><tbody>`;
+
+            reversed.forEach((row, i) => {
+                const date = row.snapshot_date.split('-').reverse().join('/');
+                const prev = reversed[i + 1];
+                const diff = prev ? row.total_banks - prev.total_banks : 0;
+                const diffClass = diff >= 0 ? 'up' : 'down';
+                const diffArrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
+                html += `<tr>
+                    <td>${date} ${diff !== 0 ? `<span class="stat-change ${diffClass}" style="margin-left:8px">${diffArrow} ${formatShort(Math.abs(diff))}</span>` : ''}</td>
+                    <td class="value-mono">${formatCurrency(row.total_banks)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_brasil)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_adquirentes)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_usa)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_special_credits)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_credit_cards)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_receivables)}</td>
+                    <td class="value-mono">${formatCurrency(row.total_projected)}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function loadData(days) {
+            currentDays = days;
+            const data = await fetchHistory(days);
+            allData = data;
+            renderStats(data);
+            renderHistoryChart(data);
+            renderCategoryChart(data);
+            renderTable(data);
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadData(parseInt(btn.dataset.days));
+            });
+        });
+
+        loadData(30);
+    </script>
+</body>
+</html>

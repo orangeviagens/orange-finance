@@ -504,6 +504,55 @@
             color: var(--emerald);
         }
 
+        /* Snapshot & History buttons */
+        .snapshot-btn {
+            background: linear-gradient(135deg, var(--orange-primary), var(--gold));
+            color: #0A0A0F;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .snapshot-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(232, 134, 58, 0.4);
+        }
+
+        .snapshot-btn:active {
+            transform: translateY(0);
+        }
+
+        .snapshot-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .history-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .history-link:hover {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.06);
+        }
+
         /* Inline editing styles */
         .editable {
             cursor: pointer;
@@ -668,6 +717,10 @@
             <div class="hero-value" id="heroValue">R$ —</div>
             <div class="hero-subtitle" id="heroSubtitle">carregando...</div>
             <div class="hero-metrics" id="heroMetrics"></div>
+            <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; align-items: center;">
+                <button id="snapshotBtn" class="snapshot-btn" title="Gravar posição atual no histórico">📸 Gravar Posição</button>
+                <a href="historico.html" class="history-link">📊 Ver Histórico</a>
+            </div>
         </section>
 
         <div class="content-wrapper">
@@ -1120,9 +1173,60 @@
             document.getElementById('refreshBtn').classList.remove('spinning');
         }
 
+        // ========== SNAPSHOT ==========
+        async function saveSnapshot() {
+            const btn = document.getElementById('snapshotBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Gravando...';
+            try {
+                const data = await fetchData();
+                const cats = { brasil: 0, adquirente: 0, usa: 0 };
+                data.banks.forEach(b => { if (cats[b.category] !== undefined) cats[b.category] += b.balance_brl; });
+                const totalBanks = cats.brasil + cats.adquirente + cats.usa;
+                const totalSpecial = data.special_credits.reduce((s, c) => s + (c.credit_limit || 0), 0);
+                const totalCards = data.credits.reduce((s, c) => s + (c.available_limit || 0), 0);
+                const totalReceivables = data.receivables.reduce((s, r) => s + (r.amount > 0 ? r.amount : 0), 0);
+                const rateMap = {};
+                data.exchange_rates.forEach(r => { rateMap[r.currency] = r.rate; });
+
+                const snapshot = {
+                    snapshot_date: new Date().toISOString().split('T')[0],
+                    total_banks: totalBanks,
+                    total_brasil: cats.brasil,
+                    total_adquirentes: cats.adquirente,
+                    total_usa: cats.usa,
+                    total_special_credits: totalSpecial,
+                    total_credit_cards: totalCards,
+                    total_receivables: totalReceivables,
+                    total_projected: totalBanks + totalSpecial,
+                    usd_rate: rateMap.USD || null,
+                    eur_rate: rateMap.EUR || null
+                };
+
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/cash_position_history`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates'
+                    },
+                    body: JSON.stringify(snapshot)
+                });
+                if (!res.ok) throw new Error(`${res.status}`);
+                showToast('📸 Posição gravada com sucesso!');
+            } catch (e) {
+                showToast('Erro ao gravar posição: ' + e.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📸 Gravar Posição';
+            }
+        }
+
         render();
         setInterval(updateHeader, 1000);
         document.getElementById('refreshBtn').addEventListener('click', render);
+        document.getElementById('snapshotBtn').addEventListener('click', saveSnapshot);
     </script>
 </body>
 </html>
