@@ -5,1011 +5,929 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orange Finance - Gestão Financeira</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🍊</text></svg>">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
+        :root {
+            --bg-dark: #0F172A;
+            --bg-card: #1E293B;
+            --border: #334155;
+            --primary: #F97316;
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --banco-brasil: #3B82F6;
+            --adquirentes: #8B5CF6;
+            --banco-usa: #EC4899;
+            --credito: #10B981;
+        }
+
+        html, body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+        }
+
         body {
-            background: #0F172A;
-            color: #E2E8F0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-        .card {
-            background: #1E293B;
-            border: 1px solid #334155;
-            border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
-        .summary-card {
-            background: #1E293B;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s ease;
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
-        .summary-card:hover {
-            transform: translateY(-2px);
-            border-color: #475569;
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 20px;
         }
-        .summary-card.total {
-            grid-column: span 2;
-            background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-title-sub {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .header-title-sub span:first-child {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .clock {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .exchange-rates {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .rate-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .rate-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .rate-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .btn-refresh {
+            padding: 8px 16px;
+            background-color: var(--primary);
+            color: white;
             border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.2s;
         }
-        .summary-card.total .label {
-            color: rgba(255, 255, 255, 0.9);
+
+        .btn-refresh:hover {
+            opacity: 0.9;
         }
-        .summary-card.total .value {
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .card.total-card {
+            background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
             color: white;
         }
-        .summary-card.brasil {
-            background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-            border: none;
+
+        .card.total-card .label {
+            color: rgba(255,255,255,0.9);
         }
-        .summary-card.adquirentes {
-            background: linear-gradient(135deg, #5B21B6 0%, #8B5CF6 100%);
-            border: none;
+
+        .card.banco-brasil {
+            border-top: 3px solid var(--banco-brasil);
         }
-        .summary-card.usa {
-            background: linear-gradient(135deg, #831843 0%, #EC4899 100%);
-            border: none;
+
+        .card.adquirentes {
+            border-top: 3px solid var(--adquirentes);
         }
-        .summary-card.credito {
-            background: linear-gradient(135deg, #15803D 0%, #22C55E 100%);
-            border: none;
+
+        .card.banco-usa {
+            border-top: 3px solid var(--banco-usa);
         }
-        .label {
+
+        .card.credito {
+            border-top: 3px solid var(--credito);
+        }
+
+        .card-label {
             font-size: 12px;
-            font-weight: 600;
-            color: #94A3B8;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
+            font-weight: 600;
         }
-        .value {
+
+        .card.total-card .card-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .card-value {
             font-size: 24px;
             font-weight: 700;
-            color: #E2E8F0;
+            word-break: break-word;
         }
-        .table-container {
-            overflow-x: auto;
+
+        .card.total-card .card-value {
+            color: white;
         }
+
+        /* Tables */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
         }
-        thead th {
-            background: #0F172A;
-            color: #CBD5E1;
-            padding: 12px;
+
+        thead {
+            background-color: rgba(30, 41, 59, 0.8);
+        }
+
+        th {
+            padding: 12px 16px;
             text-align: left;
-            font-weight: 600;
             font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #334155;
+            border-bottom: 1px solid var(--border);
         }
-        tbody td {
-            padding: 12px;
-            border-bottom: 1px solid #334155;
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
         }
-        tbody tr:nth-child(even) {
-            background: rgba(30, 41, 59, 0.5);
+
+        tr:last-child td {
+            border-bottom: none;
         }
-        tbody tr:hover {
-            background: rgba(248, 113, 22, 0.1);
+
+        .group-header {
+            background-color: rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+            color: var(--text-primary);
         }
-        .category-header {
-            background: #0F172A;
-            font-weight: 700;
-            color: white;
-            padding: 12px;
+
+        .group-header.banco-brasil {
+            border-left: 4px solid var(--banco-brasil);
         }
-        .category-header.brasil {
-            border-left: 4px solid #3B82F6;
+
+        .group-header.adquirentes {
+            border-left: 4px solid var(--adquirentes);
         }
-        .category-header.adquirentes {
-            border-left: 4px solid #8B5CF6;
+
+        .group-header.banco-usa {
+            border-left: 4px solid var(--banco-usa);
         }
-        .category-header.usa {
-            border-left: 4px solid #EC4899;
-        }
+
         .subtotal-row {
-            background: rgba(15, 23, 42, 0.8);
+            background-color: rgba(30, 41, 59, 0.8);
             font-weight: 600;
-            border-top: 2px solid #334155;
-            border-bottom: 2px solid #334155;
+            color: var(--primary);
         }
+
         .total-row {
-            background: rgba(248, 113, 22, 0.1);
+            background-color: rgba(30, 41, 59, 0.9);
             font-weight: 700;
-            border-top: 2px solid #F97316;
-            border-bottom: 2px solid #F97316;
-            color: #F97316;
+            color: var(--primary);
         }
-        input.editable {
-            background: #0F172A;
-            color: #F97316;
-            border: 2px solid #F97316;
+
+        .value-cell {
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+        }
+
+        .value-cell:hover {
+            color: var(--primary);
+        }
+
+        .edit-input {
+            background-color: #0F172A;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 6px 8px;
             border-radius: 4px;
-            padding: 6px 10px;
-            font-weight: 600;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
             width: 100%;
-            max-width: 200px;
         }
-        input.editable:focus {
+
+        .edit-input:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
         }
-        .currency-cell {
-            font-family: 'Courier New', monospace;
-            text-align: right;
-        }
-        .text-cell {
-            font-weight: 500;
-        }
-        .chart-container {
-            background: #1E293B;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
+
+        /* Charts */
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin: 20px 0;
+            margin-bottom: 40px;
         }
-        @media (max-width: 1024px) {
+
+        .chart-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            height: 350px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-canvas {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-cards .card:first-child {
+                grid-column: 1 / -1;
+            }
+
             .charts-grid {
                 grid-template-columns: 1fr;
             }
-            .summary-card.total {
-                grid-column: span 1;
-            }
         }
+
         @media (max-width: 768px) {
-            .summary-row {
-                grid-template-columns: 1fr 1fr;
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            td, th {
+                padding: 8px 12px;
             }
         }
-        .header {
-            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-            border-bottom: 2px solid #334155;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .header-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #F97316;
-        }
-        .header-subtitle {
-            font-size: 14px;
-            color: #94A3B8;
-        }
-        .header-right {
-            text-align: right;
-        }
-        .header-time {
-            font-size: 14px;
-            color: #CBD5E1;
-            margin-bottom: 4px;
-        }
-        .header-refresh {
-            font-size: 12px;
-            color: #64748B;
-            margin-bottom: 8px;
-        }
-        .refresh-btn {
-            background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 12px;
-        }
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
-        }
-        .refresh-btn:active {
-            transform: translateY(0);
-        }
-        .exchange-rates {
-            display: flex;
-            gap: 24px;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #334155;
-        }
-        .exchange-rate {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .exchange-rate-label {
-            font-size: 12px;
-            color: #94A3B8;
-            font-weight: 600;
-        }
-        .exchange-rate-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #F97316;
-            font-family: 'Courier New', monospace;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #E2E8F0;
-            margin-top: 32px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #334155;
-        }
+
+        /* Loading state */
         .loading {
             text-align: center;
             padding: 40px;
-            color: #F97316;
+            color: var(--text-secondary);
         }
+
         .error {
-            background: rgba(239, 68, 68, 0.1);
+            background-color: rgba(239, 68, 68, 0.1);
             border: 1px solid #EF4444;
-            color: #FECACA;
+            color: #FCA5A5;
             padding: 16px;
             border-radius: 8px;
-            margin-bottom: 16px;
-        }
-        .success {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid #22C55E;
-            color: #86EFAC;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .summary-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-            gap: 16px;
-            margin: 20px 0;
-        }
-        .rechart-wrapper {
-            width: 100%;
-            height: 400px;
-        }
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(249, 115, 22, 0.3);
-            border-radius: 50%;
-            border-top-color: #F97316;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect, useCallback, useMemo } = React;
-        const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts;
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <span>🍊</span>
+                <div class="header-title-sub">
+                    <span>Orange Finance</span>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Gestão Financeira | Orange Viagens</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="clock" id="clock">--:--:--</div>
+                <div class="exchange-rates">
+                    <div class="rate-item">
+                        <div class="rate-label">USD</div>
+                        <div class="rate-value" id="rate-usd">5.2390</div>
+                    </div>
+                    <div class="rate-item">
+                        <div class="rate-label">EUR</div>
+                        <div class="rate-value" id="rate-eur">6.0496</div>
+                    </div>
+                </div>
+                <button class="btn-refresh" id="btn-refresh">↻ Atualizar</button>
+            </div>
+        </div>
 
-        // Supabase config
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="card total-card">
+                <div class="card-label">Total Disponível</div>
+                <div class="card-value" id="total-disponivel">R$ 0,00</div>
+            </div>
+            <div class="card banco-brasil">
+                <div class="card-label">Bancos Brasil</div>
+                <div class="card-value" id="total-banco-brasil">R$ 0,00</div>
+            </div>
+            <div class="card adquirentes">
+                <div class="card-label">Adquirentes</div>
+                <div class="card-value" id="total-adquirentes">R$ 0,00</div>
+            </div>
+            <div class="card banco-usa">
+                <div class="card-label">Bancos USA</div>
+                <div class="card-value" id="total-banco-usa">R$ 0,00</div>
+            </div>
+            <div class="card credito">
+                <div class="card-label">Crédito Cartões</div>
+                <div class="card-value" id="total-credito">R$ 0,00</div>
+            </div>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="error" style="display: none;"></div>
+
+        <!-- Bank Accounts -->
+        <div class="section">
+            <h2 class="section-title">Contas Bancárias</h2>
+            <table id="accounts-table">
+                <thead>
+                    <tr>
+                        <th>Banco</th>
+                        <th>Saldo BRL</th>
+                        <th id="usd-header" style="display: none;">Saldo USD</th>
+                    </tr>
+                </thead>
+                <tbody id="accounts-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Distribuição por Categoria</div>
+                <div class="chart-canvas">
+                    <canvas id="distribution-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Top 10 Contas</div>
+                <div class="chart-canvas">
+                    <canvas id="top-banks-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Limits -->
+        <div class="section">
+            <h2 class="section-title">Limites de Crédito</h2>
+            <table id="credit-table">
+                <thead>
+                    <tr>
+                        <th>Banco</th>
+                        <th>Limite Disponível</th>
+                    </tr>
+                </thead>
+                <tbody id="credit-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Receivables -->
+        <div class="section">
+            <h2 class="section-title">Recebíveis</h2>
+            <table id="receivables-table">
+                <thead>
+                    <tr>
+                        <th>Origem</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="receivables-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Special Credits -->
+        <div class="section">
+            <h2 class="section-title">Créditos Especiais</h2>
+            <table id="special-table">
+                <thead>
+                    <tr>
+                        <th>Banco</th>
+                        <th>Tipo</th>
+                        <th>Limite</th>
+                    </tr>
+                </thead>
+                <tbody id="special-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ============ CONFIG ============
         const SUPABASE_URL = 'https://igixjruaogfcjxqvohuw.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnaXhqcnVhb2dmY2p4cXZvaHV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzU3NzksImV4cCI6MjA5MDIxMTc3OX0.0nif6IO0VBIAOO5QKCHBkEGTDlxanwJN0f9LrGNns2k';
 
         // Fallback data
-        const FALLBACK_BANKS = [
-            { id: 1, name: 'CAIXA $$', balance_brl: 85300.00, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 2, name: 'Itau', balance_brl: 691629.94, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 3, name: 'Santander', balance_brl: 42849.48, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 4, name: 'Sicredi', balance_brl: 23718.36, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 5, name: 'XP', balance_brl: 0.00, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 6, name: 'Daycoval', balance_brl: 533.24, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 7, name: 'Safra', balance_brl: 53274.64, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 8, name: 'C6', balance_brl: 76.68, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 9, name: 'BB', balance_brl: 460689.75, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 10, name: 'BS2', balance_brl: 4.03, balance_usd: null, category: 'banco_brasil', is_active: true },
-            { id: 11, name: 'MP', balance_brl: 1900.83, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 12, name: 'Iugu', balance_brl: 1784.72, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 13, name: 'Barte', balance_brl: 36382.00, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 14, name: 'DOM', balance_brl: 213708.98, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 15, name: 'Safrapay', balance_brl: 415292.76, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 16, name: 'Stone', balance_brl: 0.00, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 17, name: 'PagBank', balance_brl: 2591.27, balance_usd: null, category: 'adquirente', is_active: true },
-            { id: 18, name: 'Mercury', balance_brl: 64113.26, balance_usd: 12237.69, category: 'banco_usa', is_active: true },
-            { id: 19, name: 'Jeeves', balance_brl: 21212.76, balance_usd: 4049.01, category: 'banco_usa', is_active: true },
-            { id: 20, name: 'Stripe', balance_brl: 3757.83, balance_usd: 0.00, category: 'banco_usa', is_active: true },
-            { id: 21, name: 'BofA', balance_brl: 30723.70, balance_usd: 5864.42, category: 'banco_usa', is_active: true },
-            { id: 22, name: 'Cambio Real', balance_brl: 555.70, balance_usd: 106.07, category: 'banco_usa', is_active: true },
-            { id: 23, name: 'Regions', balance_brl: 0.00, balance_usd: 0.00, category: 'banco_usa', is_active: true },
-        ];
-
-        const FALLBACK_CREDIT_LIMITS = [
-            { id: 1, bank_name: 'CONTA SIMPLES', available_limit: 48.10 },
-            { id: 2, bank_name: 'CLARA CARTOES', available_limit: 53945.27 },
-            { id: 3, bank_name: 'BANCO DO BRASIL', available_limit: 3425.00 },
-            { id: 4, bank_name: 'BANCO SANTANDER', available_limit: 888.00 },
-            { id: 5, bank_name: 'BANCO C6', available_limit: 5359.56 },
-        ];
-
-        const FALLBACK_RECEIVABLES = [
-            { id: 1, source: 'DOM/BARTE', receive_date: '2026-03-30', amount: 213708.98 },
-            { id: 2, source: 'DOM/BARTE', receive_date: '2026-03-31', amount: 0.00 },
-        ];
-
-        const FALLBACK_EXCHANGE_RATES = [
-            { id: 1, currency: 'USD', rate: 5.2390 },
-            { id: 2, currency: 'EUR', rate: 6.0496 },
-        ];
-
-        const FALLBACK_SPECIAL_CREDITS = [
-            { id: 1, bank_name: 'Itau', credit_type: 'Cta Garantida', credit_limit: 200000 },
-            { id: 2, bank_name: 'Daycoval', credit_type: 'Chq. Especial', credit_limit: 150000 },
-            { id: 3, bank_name: 'Itau', credit_type: 'Chq Especial', credit_limit: 80000 },
-            { id: 4, bank_name: 'BB', credit_type: 'Chq Especial', credit_limit: 150000 },
-            { id: 5, bank_name: 'Safra', credit_type: 'Chq Especial', credit_limit: 50000 },
-            { id: 6, bank_name: 'C6/Santander', credit_type: 'Crédito', credit_limit: 30000 },
-        ];
-
-        // Utility functions
-        const formatCurrency = (value) => {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+        const FALLBACK_DATA = {
+            accounts: [
+                { id: 'caixa_bb', banco: 'CAIXA', saldo_brl: 85300.00, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'itau', banco: 'Itau', saldo_brl: 691629.94, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'santander', banco: 'Santander', saldo_brl: 42849.48, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'sicredi', banco: 'Sicredi', saldo_brl: 23718.36, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'xp', banco: 'XP', saldo_brl: 0.00, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'daycoval', banco: 'Daycoval', saldo_brl: 533.24, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'safra', banco: 'Safra', saldo_brl: 53274.64, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'c6', banco: 'C6', saldo_brl: 76.68, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'bb', banco: 'BB', saldo_brl: 460689.75, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'bs2', banco: 'BS2', saldo_brl: 4.03, saldo_usd: null, category: 'banco_brasil' },
+                { id: 'mp', banco: 'MP', saldo_brl: 1900.83, saldo_usd: null, category: 'adquirente' },
+                { id: 'iugu', banco: 'Iugu', saldo_brl: 1784.72, saldo_usd: null, category: 'adquirente' },
+                { id: 'barte', banco: 'Barte', saldo_brl: 36382.00, saldo_usd: null, category: 'adquirente' },
+                { id: 'dom', banco: 'DOM', saldo_brl: 213708.98, saldo_usd: null, category: 'adquirente' },
+                { id: 'safrapay', banco: 'Safrapay', saldo_brl: 415292.76, saldo_usd: null, category: 'adquirente' },
+                { id: 'stone', banco: 'Stone', saldo_brl: 0.00, saldo_usd: null, category: 'adquirente' },
+                { id: 'pagbank', banco: 'PagBank', saldo_brl: 2591.27, saldo_usd: null, category: 'adquirente' },
+                { id: 'mercury', banco: 'Mercury', saldo_brl: 64113.26, saldo_usd: 12237.69, category: 'banco_usa' },
+                { id: 'jeeves', banco: 'Jeeves', saldo_brl: 21212.76, saldo_usd: 4049.01, category: 'banco_usa' },
+                { id: 'stripe', banco: 'Stripe', saldo_brl: 3757.83, saldo_usd: 0.00, category: 'banco_usa' },
+                { id: 'bofa', banco: 'BofA', saldo_brl: 30723.70, saldo_usd: 5864.42, category: 'banco_usa' },
+                { id: 'cambio', banco: 'Cambio Real', saldo_brl: 555.70, saldo_usd: 106.07, category: 'banco_usa' },
+                { id: 'regions', banco: 'Regions', saldo_brl: 0.00, saldo_usd: 0.00, category: 'banco_usa' }
+            ],
+            credits: [
+                { id: 'cc_simples', banco: 'CONTA SIMPLES', limite_disponivel: 48.10 },
+                { id: 'cc_clara', banco: 'CLARA CARTOES', limite_disponivel: 53945.27 },
+                { id: 'cc_bb', banco: 'BANCO DO BRASIL', limite_disponivel: 3425.00 },
+                { id: 'cc_santander', banco: 'BANCO SANTANDER', limite_disponivel: 888.00 },
+                { id: 'cc_c6', banco: 'BANCO C6', limite_disponivel: 5359.56 }
+            ],
+            receivables: [
+                { id: 'rec_1', origem: 'DOM/BARTE', data: '2026-03-30', valor: 213708.98 },
+                { id: 'rec_2', origem: 'DOM/BARTE', data: '2026-03-31', valor: 0.00 }
+            ],
+            specials: [
+                { id: 'spec_1', banco: 'Itau', tipo: 'Cta Garantida', limite: 200000 },
+                { id: 'spec_2', banco: 'Daycoval', tipo: 'Chq. Especial', limite: 150000 },
+                { id: 'spec_3', banco: 'Itau', tipo: 'Chq Especial', limite: 80000 },
+                { id: 'spec_4', banco: 'BB', tipo: 'Chq Especial', limite: 150000 },
+                { id: 'spec_5', banco: 'Safra', tipo: 'Chq Especial', limite: 50000 },
+                { id: 'spec_6', banco: 'C6/Santander', tipo: 'Cartão', limite: 30000 }
+            ]
         };
 
-        const formatUSD = (value) => {
-            return '$' + (value || 0).toFixed(2).replace('.', ',');
-        };
+        // ============ STATE ============
+        let accounts = [];
+        let credits = [];
+        let receivables = [];
+        let specials = [];
+        let charts = {};
 
-        const supabaseFetch = async (table, method = 'GET', data = null, filter = null) => {
+        // ============ FORMATTING ============
+        const fmt = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        const fmtUSD = v => '$' + (v || 0).toFixed(2).replace('.', ',');
+
+        // ============ SUPABASE API ============
+        async function supabaseGet(table) {
             try {
-                let url = `${SUPABASE_URL}/rest/v1/${table}?select=*`;
-                if (filter) url += `&${filter}`;
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, {
+                    headers: {
+                        apikey: SUPABASE_KEY,
+                        Authorization: `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (e) {
+                console.warn(`Supabase fetch failed for ${table}:`, e.message);
+                return null;
+            }
+        }
 
-                const options = {
-                    method,
+        async function supabasePatch(table, id, data) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                    method: 'PATCH',
                     headers: {
                         apikey: SUPABASE_KEY,
                         Authorization: `Bearer ${SUPABASE_KEY}`,
                         'Content-Type': 'application/json',
+                        Prefer: 'return=representation'
                     },
-                };
-
-                if (data) {
-                    if (filter) {
-                        options.headers['Prefer'] = 'return=representation';
-                    }
-                    options.body = JSON.stringify(data);
-                }
-
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                console.error(`Supabase fetch error for ${table}:`, error);
-                return null;
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (e) {
+                console.error('Supabase PATCH failed:', e.message);
+                throw e;
             }
-        };
-
-        // Header Component
-        function Header({ onRefresh, exchangeRates, lastRefresh }) {
-            const [currentTime, setCurrentTime] = useState(new Date());
-
-            useEffect(() => {
-                const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            const timeStr = currentTime.toLocaleTimeString('pt-BR');
-            const dateStr = currentTime.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-            const usdRate = exchangeRates?.find(r => r.currency === 'USD')?.rate || 5.24;
-            const eurRate = exchangeRates?.find(r => r.currency === 'EUR')?.rate || 6.05;
-
-            return (
-                <div className="header">
-                    <div className="header-top">
-                        <div className="header-left">
-                            <span style={{ fontSize: '32px' }}>🍊</span>
-                            <div>
-                                <div className="header-title">Orange Finance</div>
-                                <div className="header-subtitle">Gestão Financeira | Orange Viagens</div>
-                            </div>
-                        </div>
-                        <div className="header-right">
-                            <div className="header-time">{timeStr}</div>
-                            <div className="header-time">{dateStr}</div>
-                            <div className="header-refresh">
-                                Última atualização: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString('pt-BR') : 'Nunca'}
-                            </div>
-                            <button className="refresh-btn" onClick={onRefresh}>
-                                🔄 Atualizar Dados
-                            </button>
-                        </div>
-                    </div>
-                    <div className="exchange-rates">
-                        <div className="exchange-rate">
-                            <span style={{ fontSize: '20px' }}>🇺🇸</span>
-                            <div>
-                                <div className="exchange-rate-label">USD</div>
-                                <div className="exchange-rate-value">{usdRate.toFixed(4)}</div>
-                            </div>
-                        </div>
-                        <div className="exchange-rate">
-                            <span style={{ fontSize: '20px' }}>🇪🇺</span>
-                            <div>
-                                <div className="exchange-rate-label">EUR</div>
-                                <div className="exchange-rate-value">{eurRate.toFixed(4)}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
         }
 
-        // Summary Cards Component
-        function SummaryCards({ banks, creditLimits }) {
-            const totalBrasil = banks
-                .filter(b => b.category === 'banco_brasil')
-                .reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-
-            const totalAdquirentes = banks
-                .filter(b => b.category === 'adquirente')
-                .reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-
-            const totalUSA = banks
-                .filter(b => b.category === 'banco_usa')
-                .reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-
-            const totalCredito = creditLimits.reduce((sum, c) => sum + (c.available_limit || 0), 0);
-
-            const grandTotal = totalBrasil + totalAdquirentes + totalUSA;
-
-            return (
-                <div className="summary-row">
-                    <div className="summary-card total">
-                        <div className="label">Total Disponível</div>
-                        <div className="value">{formatCurrency(grandTotal)}</div>
-                    </div>
-                    <div className="summary-card brasil">
-                        <div className="label">Bancos Brasil</div>
-                        <div className="value">{formatCurrency(totalBrasil)}</div>
-                    </div>
-                    <div className="summary-card adquirentes">
-                        <div className="label">Adquirentes</div>
-                        <div className="value">{formatCurrency(totalAdquirentes)}</div>
-                    </div>
-                    <div className="summary-card usa">
-                        <div className="label">Bancos USA</div>
-                        <div className="value">{formatCurrency(totalUSA)}</div>
-                    </div>
-                    <div className="summary-card credito">
-                        <div className="label">Crédito Cartões</div>
-                        <div className="value">{formatCurrency(totalCredito)}</div>
-                    </div>
-                </div>
-            );
+        // ============ CLOCK ============
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clock').textContent = time;
         }
 
-        // Bank Accounts Table Component
-        function BankAccountsTable({ banks, onUpdate }) {
-            const [editingId, setEditingId] = useState(null);
-            const [editValue, setEditValue] = useState('');
-            const [isSaving, setIsSaving] = useState(false);
-
-            const handleEdit = (id, value) => {
-                setEditingId(id);
-                setEditValue(value.toString());
-            };
-
-            const handleSave = async (id, field) => {
-                setIsSaving(true);
-                const numValue = parseFloat(editValue.replace(',', '.'));
-                if (!isNaN(numValue)) {
-                    const success = await onUpdate(id, { [field]: numValue });
-                    if (success) {
-                        setEditingId(null);
-                    }
-                }
-                setIsSaving(false);
-            };
-
-            const groupedBanks = {
-                banco_brasil: banks.filter(b => b.category === 'banco_brasil'),
-                adquirente: banks.filter(b => b.category === 'adquirente'),
-                banco_usa: banks.filter(b => b.category === 'banco_usa'),
-            };
-
-            const categoryLabels = {
-                banco_brasil: 'Bancos Brasil',
-                adquirente: 'Adquirentes',
-                banco_usa: 'Bancos USA',
-            };
-
-            const categoryClass = {
-                banco_brasil: 'brasil',
-                adquirente: 'adquirentes',
-                banco_usa: 'usa',
-            };
-
-            return (
-                <div className="card">
-                    <h2 className="section-title">Contas Bancárias</h2>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Banco</th>
-                                    <th className="currency-cell">Saldo BRL</th>
-                                    <th className="currency-cell">Saldo USD</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(groupedBanks).map(([category, categoryBanks]) => {
-                                    const subtotal = categoryBanks.reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-                                    return (
-                                        <React.Fragment key={category}>
-                                            <tr className={`category-header ${categoryClass[category]}`}>
-                                                <td colSpan="3">{categoryLabels[category]}</td>
-                                            </tr>
-                                            {categoryBanks.map(bank => (
-                                                <tr key={bank.id}>
-                                                    <td className="text-cell">{bank.name}</td>
-                                                    <td className="currency-cell">
-                                                        {editingId === `${bank.id}-brl` ? (
-                                                            <input
-                                                                type="text"
-                                                                className="editable"
-                                                                value={editValue}
-                                                                onChange={(e) => setEditValue(e.target.value)}
-                                                                onBlur={() => handleSave(bank.id, 'balance_brl')}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleSave(bank.id, 'balance_brl')}
-                                                                autoFocus
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                style={{ cursor: 'pointer' }}
-                                                                onClick={() => handleEdit(`${bank.id}-brl`, bank.balance_brl)}
-                                                            >
-                                                                {formatCurrency(bank.balance_brl)}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="currency-cell">
-                                                        {category === 'banco_usa' ? (
-                                                            editingId === `${bank.id}-usd` ? (
-                                                                <input
-                                                                    type="text"
-                                                                    className="editable"
-                                                                    value={editValue}
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    onBlur={() => handleSave(bank.id, 'balance_usd')}
-                                                                    onKeyDown={(e) => e.key === 'Enter' && handleSave(bank.id, 'balance_usd')}
-                                                                    autoFocus
-                                                                />
-                                                            ) : (
-                                                                <span
-                                                                    style={{ cursor: 'pointer' }}
-                                                                    onClick={() => handleEdit(`${bank.id}-usd`, bank.balance_usd)}
-                                                                >
-                                                                    {formatUSD(bank.balance_usd)}
-                                                                </span>
-                                                            )
-                                                        ) : (
-                                                            '—'
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            <tr className="subtotal-row">
-                                                <td>Subtotal {categoryLabels[category]}</td>
-                                                <td className="currency-cell">{formatCurrency(subtotal)}</td>
-                                                <td className="currency-cell">—</td>
-                                            </tr>
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        // Charts Component
-        function Charts({ banks, creditLimits }) {
-            const categoryData = useMemo(() => {
-                const brasil = banks.filter(b => b.category === 'banco_brasil').reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-                const adquirentes = banks.filter(b => b.category === 'adquirente').reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-                const usa = banks.filter(b => b.category === 'banco_usa').reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-                return [
-                    { name: 'Bancos Brasil', value: brasil, fill: '#3B82F6' },
-                    { name: 'Adquirentes', value: adquirentes, fill: '#8B5CF6' },
-                    { name: 'Bancos USA', value: usa, fill: '#EC4899' },
-                ];
-            }, [banks]);
-
-            const topBanks = useMemo(() => {
-                return banks
-                    .sort((a, b) => (b.balance_brl || 0) - (a.balance_brl || 0))
-                    .slice(0, 10)
-                    .map(b => ({ name: b.name, value: b.balance_brl }));
-            }, [banks]);
-
-            return (
-                <div className="charts-grid">
-                    <div className="chart-container">
-                        <h3 style={{ marginBottom: '16px', color: '#E2E8F0', fontWeight: '600' }}>Distribuição por Categoria</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={categoryData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => formatCurrency(value)} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="chart-container">
-                        <h3 style={{ marginBottom: '16px', color: '#E2E8F0', fontWeight: '600' }}>Top 10 Bancos por Saldo</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={topBanks}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                <XAxis dataKey="name" stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                <YAxis stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                <Tooltip
-                                    formatter={(value) => formatCurrency(value)}
-                                    contentStyle={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '6px' }}
-                                    labelStyle={{ color: '#E2E8F0' }}
-                                />
-                                <Bar dataKey="value" fill="#F97316" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            );
-        }
-
-        // Credit Limits Table Component
-        function CreditLimitsTable({ limits, onUpdate }) {
-            const [editingId, setEditingId] = useState(null);
-            const [editValue, setEditValue] = useState('');
-
-            const handleEdit = (id, value) => {
-                setEditingId(id);
-                setEditValue(value.toString());
-            };
-
-            const handleSave = async (id) => {
-                const numValue = parseFloat(editValue.replace(',', '.'));
-                if (!isNaN(numValue)) {
-                    const success = await onUpdate(id, { available_limit: numValue }, 'credit_limits');
-                    if (success) {
-                        setEditingId(null);
-                    }
-                }
-            };
-
-            const total = limits.reduce((sum, l) => sum + (l.available_limit || 0), 0);
-
-            return (
-                <div className="card">
-                    <h2 className="section-title">Limites Cartão de Crédito</h2>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Banco</th>
-                                    <th className="currency-cell">Limite Disponível</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {limits.map(limit => (
-                                    <tr key={limit.id}>
-                                        <td className="text-cell">{limit.bank_name}</td>
-                                        <td className="currency-cell">
-                                            {editingId === limit.id ? (
-                                                <input
-                                                    type="text"
-                                                    className="editable"
-                                                    value={editValue}
-                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                    onBlur={() => handleSave(limit.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSave(limit.id)}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <span
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => handleEdit(limit.id, limit.available_limit)}
-                                                >
-                                                    {formatCurrency(limit.available_limit)}
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                                <tr className="total-row">
-                                    <td>Total</td>
-                                    <td className="currency-cell">{formatCurrency(total)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        // Receivables Table Component
-        function ReceivablesTable({ receivables, onUpdate }) {
-            const [editingId, setEditingId] = useState(null);
-            const [editValue, setEditValue] = useState('');
-            const [editField, setEditField] = useState('');
-
-            const handleEdit = (id, field, value) => {
-                setEditingId(id);
-                setEditField(field);
-                setEditValue(value.toString());
-            };
-
-            const handleSave = async (id) => {
-                let updateData = {};
-                if (editField === 'amount') {
-                    updateData.amount = parseFloat(editValue.replace(',', '.'));
-                } else if (editField === 'receive_date') {
-                    updateData.receive_date = editValue;
-                }
-                const success = await onUpdate(id, updateData, 'receivables');
-                if (success) {
-                    setEditingId(null);
-                }
-            };
-
-            const total = receivables.reduce((sum, r) => sum + (r.amount || 0), 0);
-
-            return (
-                <div className="card">
-                    <h2 className="section-title">A Receber Adquirentes</h2>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Origem</th>
-                                    <th>Data</th>
-                                    <th className="currency-cell">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {receivables.map(rec => (
-                                    <tr key={rec.id}>
-                                        <td className="text-cell">{rec.source}</td>
-                                        <td>
-                                            {editingId === rec.id && editField === 'receive_date' ? (
-                                                <input
-                                                    type="date"
-                                                    className="editable"
-                                                    value={editValue}
-                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                    onBlur={() => handleSave(rec.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSave(rec.id)}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <span
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => handleEdit(rec.id, 'receive_date', rec.receive_date)}
-                                                >
-                                                    {new Date(rec.receive_date).toLocaleDateString('pt-BR')}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="currency-cell">
-                                            {editingId === rec.id && editField === 'amount' ? (
-                                                <input
-                                                    type="text"
-                                                    className="editable"
-                                                    value={editValue}
-                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                    onBlur={() => handleSave(rec.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSave(rec.id)}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <span
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => handleEdit(rec.id, 'amount', rec.amount)}
-                                                >
-                                                    {formatCurrency(rec.amount)}
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                                <tr className="total-row">
-                                    <td colSpan="2">Total</td>
-                                    <td className="currency-cell">{formatCurrency(total)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        // Special Credits Table Component
-        function SpecialCreditsTable({ specialCredits, banks }) {
-            const totalSpecialCredits = specialCredits.reduce((sum, s) => sum + (s.credit_limit || 0), 0);
-            const totalBanks = banks.reduce((sum, b) => sum + (b.balance_brl || 0), 0);
-            const projectedBalance = totalBanks + totalSpecialCredits;
-
-            return (
-                <div className="card">
-                    <h2 className="section-title">Créditos Especiais</h2>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Banco</th>
-                                    <th>Tipo</th>
-                                    <th className="currency-cell">Limite</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {specialCredits.map(credit => (
-                                    <tr key={credit.id}>
-                                        <td className="text-cell">{credit.bank_name}</td>
-                                        <td className="text-cell">{credit.credit_type}</td>
-                                        <td className="currency-cell">{formatCurrency(credit.credit_limit)}</td>
-                                    </tr>
-                                ))}
-                                <tr className="subtotal-row">
-                                    <td colSpan="2">Subtotal Créditos</td>
-                                    <td className="currency-cell">{formatCurrency(totalSpecialCredits)}</td>
-                                </tr>
-                                <tr className="total-row">
-                                    <td colSpan="2">Saldo Projetado</td>
-                                    <td className="currency-cell">{formatCurrency(projectedBalance)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        // Main App Component
-        function App() {
-            const [banks, setBanks] = useState(FALLBACK_BANKS);
-            const [creditLimits, setCreditLimits] = useState(FALLBACK_CREDIT_LIMITS);
-            const [receivables, setReceivables] = useState(FALLBACK_RECEIVABLES);
-            const [exchangeRates, setExchangeRates] = useState(FALLBACK_EXCHANGE_RATES);
-            const [specialCredits, setSpecialCredits] = useState(FALLBACK_SPECIAL_CREDITS);
-            const [loading, setLoading] = useState(true);
-            const [lastRefresh, setLastRefresh] = useState(null);
-            const [message, setMessage] = useState('');
-
-            const loadData = useCallback(async () => {
-                setLoading(true);
-                const [banksData, limitsData, receivablesData, ratesData, creditsData] = await Promise.all([
-                    supabaseFetch('bank_accounts'),
-                    supabaseFetch('credit_limits'),
-                    supabaseFetch('receivables'),
-                    supabaseFetch('exchange_rates'),
-                    supabaseFetch('special_credits'),
+        // ============ LOAD DATA ============
+        async function loadData() {
+            try {
+                const [accData, credData, recData, specData] = await Promise.all([
+                    supabaseGet('accounts'),
+                    supabaseGet('credits'),
+                    supabaseGet('receivables'),
+                    supabaseGet('specials')
                 ]);
 
-                if (banksData) setBanks(banksData);
-                if (limitsData) setCreditLimits(limitsData);
-                if (receivablesData) setReceivables(receivablesData);
-                if (ratesData) setExchangeRates(ratesData);
-                if (creditsData) setSpecialCredits(creditsData);
+                accounts = accData || FALLBACK_DATA.accounts;
+                credits = credData || FALLBACK_DATA.credits;
+                receivables = recData || FALLBACK_DATA.receivables;
+                specials = specData || FALLBACK_DATA.specials;
 
-                setLastRefresh(new Date());
-                setLoading(false);
-            }, []);
-
-            const handleUpdate = useCallback(async (id, data, table = 'bank_accounts') => {
-                try {
-                    const filter = `id=eq.${id}`;
-                    const result = await supabaseFetch(table, 'PATCH', data, filter);
-
-                    if (result && result.length > 0) {
-                        if (table === 'bank_accounts') {
-                            setBanks(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
-                        } else if (table === 'credit_limits') {
-                            setCreditLimits(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
-                        } else if (table === 'receivables') {
-                            setReceivables(prev => prev.map(r => r.id === id ? { ...r, ...data } : r));
-                        }
-                        setMessage('✅ Salvo com sucesso');
-                        setTimeout(() => setMessage(''), 3000);
-                        return true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Update error:', error);
-                    return false;
-                }
-            }, []);
-
-            useEffect(() => {
-                loadData();
-            }, [loadData]);
-
-            if (loading) {
-                return (
-                    <div className="loading">
-                        <div className="spinner"></div>
-                        <p style={{ marginTop: '16px' }}>Carregando dados financeiros...</p>
-                    </div>
-                );
+                render();
+            } catch (e) {
+                showError('Erro ao carregar dados. Usando dados padrão.');
+                accounts = FALLBACK_DATA.accounts;
+                credits = FALLBACK_DATA.credits;
+                receivables = FALLBACK_DATA.receivables;
+                specials = FALLBACK_DATA.specials;
+                render();
             }
-
-            return (
-                <div style={{ minHeight: '100vh', paddingBottom: '40px' }}>
-                    <Header onRefresh={loadData} exchangeRates={exchangeRates} lastRefresh={lastRefresh} />
-                    <div className="container">
-                        {message && (
-                            <div className="success" style={{ marginBottom: '16px' }}>
-                                {message}
-                            </div>
-                        )}
-                        <SummaryCards banks={banks} creditLimits={creditLimits} />
-                        <BankAccountsTable banks={banks} onUpdate={handleUpdate} />
-                        <Charts banks={banks} creditLimits={creditLimits} />
-                        <CreditLimitsTable limits={creditLimits} onUpdate={handleUpdate} />
-                        <ReceivablesTable receivables={receivables} onUpdate={handleUpdate} />
-                        <SpecialCreditsTable specialCredits={specialCredits} banks={banks} />
-                    </div>
-                </div>
-            );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function showError(msg) {
+            const alert = document.getElementById('error-alert');
+            alert.textContent = msg;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        // ============ RENDER ============
+        function render() {
+            renderSummary();
+            renderAccounts();
+            renderCredits();
+            renderReceivables();
+            renderSpecials();
+            renderCharts();
+        }
+
+        function renderSummary() {
+            const totBanco = accounts.filter(a => a.category === 'banco_brasil').reduce((s, a) => s + (a.saldo_brl || 0), 0);
+            const totAd = accounts.filter(a => a.category === 'adquirente').reduce((s, a) => s + (a.saldo_brl || 0), 0);
+            const totUSA = accounts.filter(a => a.category === 'banco_usa').reduce((s, a) => s + (a.saldo_brl || 0), 0);
+            const totCredit = credits.reduce((s, c) => s + (c.limite_disponivel || 0), 0);
+            const total = totBanco + totAd + totUSA + totCredit;
+
+            document.getElementById('total-disponivel').textContent = fmt(total);
+            document.getElementById('total-banco-brasil').textContent = fmt(totBanco);
+            document.getElementById('total-adquirentes').textContent = fmt(totAd);
+            document.getElementById('total-banco-usa').textContent = fmt(totUSA);
+            document.getElementById('total-credito').textContent = fmt(totCredit);
+        }
+
+        function renderAccounts() {
+            const tbody = document.getElementById('accounts-tbody');
+            const hasUSA = accounts.some(a => a.category === 'banco_usa');
+            document.getElementById('usd-header').style.display = hasUSA ? 'table-cell' : 'none';
+
+            tbody.innerHTML = '';
+
+            const categories = [
+                { key: 'banco_brasil', label: 'Bancos Brasil', class: 'banco-brasil' },
+                { key: 'adquirente', label: 'Adquirentes', class: 'adquirentes' },
+                { key: 'banco_usa', label: 'Bancos USA', class: 'banco-usa' }
+            ];
+
+            categories.forEach(cat => {
+                const items = accounts.filter(a => a.category === cat.key);
+                if (items.length === 0) return;
+
+                // Group header
+                const headerRow = document.createElement('tr');
+                headerRow.className = `group-header ${cat.class}`;
+                headerRow.innerHTML = `<td colspan="${hasUSA ? 3 : 2}"><strong>${cat.label}</strong></td>`;
+                tbody.appendChild(headerRow);
+
+                let subTotal = 0;
+                items.forEach(acc => {
+                    const row = document.createElement('tr');
+                    const brlCell = `<td class="value-cell" data-table="accounts" data-id="${acc.id}" data-field="saldo_brl">${fmt(acc.saldo_brl || 0)}</td>`;
+                    const usdCell = hasUSA ? `<td class="value-cell" data-table="accounts" data-id="${acc.id}" data-field="saldo_usd" style="${cat.key !== 'banco_usa' ? 'display:none' : ''}">${fmtUSD(acc.saldo_usd || 0)}</td>` : '';
+                    row.innerHTML = `<td>${acc.banco}</td>${brlCell}${usdCell}`;
+                    tbody.appendChild(row);
+                    subTotal += acc.saldo_brl || 0;
+                });
+
+                // Subtotal row
+                const subRow = document.createElement('tr');
+                subRow.className = 'subtotal-row';
+                const usdSubCell = hasUSA ? '<td>-</td>' : '';
+                subRow.innerHTML = `<td><strong>Subtotal</strong></td><td>${fmt(subTotal)}</td>${usdSubCell}`;
+                tbody.appendChild(subRow);
+            });
+
+            // Total row
+            const totalBRL = accounts.reduce((s, a) => s + (a.saldo_brl || 0), 0);
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            const usdTotalCell = hasUSA ? '<td>-</td>' : '';
+            totalRow.innerHTML = `<td><strong>TOTAL</strong></td><td>${fmt(totalBRL)}</td>${usdTotalCell}`;
+            tbody.appendChild(totalRow);
+
+            attachValueListeners();
+        }
+
+        function renderCredits() {
+            const tbody = document.getElementById('credit-tbody');
+            tbody.innerHTML = '';
+
+            credits.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${c.banco}</td>
+                    <td class="value-cell" data-table="credits" data-id="${c.id}" data-field="limite_disponivel">${fmt(c.limite_disponivel || 0)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const total = credits.reduce((s, c) => s + (c.limite_disponivel || 0), 0);
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `<td><strong>TOTAL</strong></td><td>${fmt(total)}</td>`;
+            tbody.appendChild(totalRow);
+
+            attachValueListeners();
+        }
+
+        function renderReceivables() {
+            const tbody = document.getElementById('receivables-tbody');
+            tbody.innerHTML = '';
+
+            receivables.forEach(r => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${r.origem}</td>
+                    <td>${r.data}</td>
+                    <td class="value-cell" data-table="receivables" data-id="${r.id}" data-field="valor">${fmt(r.valor || 0)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const total = receivables.reduce((s, r) => s + (r.valor || 0), 0);
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `<td colspan="2"><strong>TOTAL</strong></td><td>${fmt(total)}</td>`;
+            tbody.appendChild(totalRow);
+
+            attachValueListeners();
+        }
+
+        function renderSpecials() {
+            const tbody = document.getElementById('special-tbody');
+            tbody.innerHTML = '';
+
+            specials.forEach(s => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${s.banco}</td>
+                    <td>${s.tipo}</td>
+                    <td class="value-cell" data-table="specials" data-id="${s.id}" data-field="limite">${fmt(s.limite || 0)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const subtotal = specials.reduce((s, x) => s + (x.limite || 0), 0);
+            const projected = subtotal;
+            const subRow = document.createElement('tr');
+            subRow.className = 'subtotal-row';
+            subRow.innerHTML = `<td colspan="2"><strong>Subtotal</strong></td><td>${fmt(subtotal)}</td>`;
+            tbody.appendChild(subRow);
+
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `<td colspan="2"><strong>Saldo Projetado</strong></td><td>${fmt(projected)}</td>`;
+            tbody.appendChild(totalRow);
+
+            attachValueListeners();
+        }
+
+        function attachValueListeners() {
+            document.querySelectorAll('.value-cell').forEach(cell => {
+                cell.addEventListener('click', handleCellClick);
+            });
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            const table = cell.dataset.table;
+            const id = cell.dataset.id;
+            const field = cell.dataset.field;
+            const value = cell.textContent;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+
+            cell.innerHTML = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+
+            async function save() {
+                let newValue = parseFloat(input.value.replace(',', '.')) || 0;
+                try {
+                    await supabasePatch(table, id, { [field]: newValue });
+                    // Update local state
+                    if (table === 'accounts') {
+                        const acc = accounts.find(a => a.id === id);
+                        if (acc) acc[field] = newValue;
+                    } else if (table === 'credits') {
+                        const c = credits.find(x => x.id === id);
+                        if (c) c[field] = newValue;
+                    } else if (table === 'receivables') {
+                        const r = receivables.find(x => x.id === id);
+                        if (r) r[field] = newValue;
+                    } else if (table === 'specials') {
+                        const s = specials.find(x => x.id === id);
+                        if (s) s[field] = newValue;
+                    }
+                    render();
+                } catch (e) {
+                    console.error('Save error:', e);
+                    cell.textContent = value;
+                    showError('Erro ao salvar. Tente novamente.');
+                }
+            }
+
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') save();
+                if (e.key === 'Escape') cell.textContent = value;
+            });
+        }
+
+        function renderCharts() {
+            // Destroy old charts
+            Object.values(charts).forEach(ch => ch.destroy && ch.destroy());
+            charts = {};
+
+            // Distribution chart
+            const catData = {
+                'banco_brasil': accounts.filter(a => a.category === 'banco_brasil').reduce((s, a) => s + (a.saldo_brl || 0), 0),
+                'adquirente': accounts.filter(a => a.category === 'adquirente').reduce((s, a) => s + (a.saldo_brl || 0), 0),
+                'banco_usa': accounts.filter(a => a.category === 'banco_usa').reduce((s, a) => s + (a.saldo_brl || 0), 0)
+            };
+
+            const distCtx = document.getElementById('distribution-chart').getContext('2d');
+            charts.distribution = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bancos Brasil', 'Adquirentes', 'Bancos USA'],
+                    datasets: [{
+                        data: [catData['banco_brasil'], catData['adquirente'], catData['banco_usa']],
+                        backgroundColor: ['#3B82F6', '#8B5CF6', '#EC4899'],
+                        borderColor: '#1E293B',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#CBD5E1', font: { size: 12 } } }
+                    }
+                }
+            });
+
+            // Top 10 banks chart
+            const sorted = accounts.slice().sort((a, b) => (b.saldo_brl || 0) - (a.saldo_brl || 0)).slice(0, 10);
+            const topCtx = document.getElementById('top-banks-chart').getContext('2d');
+            charts.topBanks = new Chart(topCtx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(a => a.banco),
+                    datasets: [{
+                        label: 'Saldo BRL',
+                        data: sorted.map(a => a.saldo_brl || 0),
+                        backgroundColor: '#F97316',
+                        borderColor: '#F97316',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#CBD5E1' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#CBD5E1' }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#CBD5E1' }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+        }
+
+        // ============ INIT ============
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadData();
+            document.getElementById('btn-refresh').addEventListener('click', loadData);
+        });
     </script>
 </body>
 </html>
